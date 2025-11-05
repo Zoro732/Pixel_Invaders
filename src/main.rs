@@ -19,6 +19,9 @@ async fn main() {
 
     let mut projectiles: Vec<Projectile> = Vec::new();
     let mut last_shot_time: f32 = 0.0;
+
+    let mut enemies: Vec<Enemy> = Vec::new();
+    let mut last_enemy_spawn_time: f32 = 0.0;
     
     
     loop {
@@ -26,6 +29,7 @@ async fn main() {
 
         let current_time: f32 = get_frame_time();
         last_shot_time += current_time;
+        last_enemy_spawn_time += current_time;
 
         // Player movement
         if is_key_down(KeyCode::Right) {
@@ -43,6 +47,7 @@ async fn main() {
             player.x = screen_width() - player.width;
         }
 
+        //Player shooting
         if last_shot_time >= player.projectile_interval {
             projectiles.push(Projectile {
                 x: player.x + player.width / 2.0 - 5.0,
@@ -53,12 +58,30 @@ async fn main() {
             });
             last_shot_time = 0.0;
         }
-
+        // Update and draw projectiles
         for proj in &mut projectiles {
             proj.y -= proj.speed;
             draw_rectangle(proj.x, proj.y, proj.width, proj.height, GRAY);
         }
 
+        if last_enemy_spawn_time >= 2.0 {
+            enemies.push(Enemy {
+                x: rand::gen_range(0.0, screen_width() - 40.0),
+                y: 50.0,
+                speed: 2.0,
+                width: 40.0,
+                height: 40.0,
+                spawn_interval: 4.0,
+                health: 10,
+            });
+            last_enemy_spawn_time = 0.0;
+        }
+
+        // Update and draw enemies
+        for enemy in &mut enemies {
+            enemy.x += enemy.speed;
+            draw_rectangle(enemy.x, enemy.y, enemy.width, enemy.height, RED);
+        }
 
         draw_rectangle(player.x, player.y, 120.0, 60.0, WHITE);
         next_frame().await
@@ -80,4 +103,14 @@ struct Projectile {
     speed: f32,
     width: f32,
     height: f32,
+}
+
+struct Enemy {
+    x: f32,
+    y: f32,
+    speed: f32,
+    width: f32,
+    height: f32,
+    spawn_interval: f32,
+    health: i32,
 }
