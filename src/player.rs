@@ -37,7 +37,7 @@ impl Player {
             width: 120.0,
             height: 60.0,
             attack_power: 2,
-            attack_speed: 0.1,
+            attack_speed: 1.0,
             score: 0,
             state: PlayerState::Healthy,
             health: 10,
@@ -68,7 +68,7 @@ impl Player {
             projectile_vector.push(PlayerProjectile {
                 x: self.x + self.width / 2.0 - 5.0,
                 y: self.y,
-                speed: 10.0,
+                speed: 400.0,
                 width: 10.0,
                 height: 10.0,
             });
