@@ -6,6 +6,8 @@ use core::panic;
 use enemy::*;
 use macroquad::prelude::*;
 use player::*;
+use std::cell::RefCell;
+use std::rc::Rc;
 
 #[macroquad::main("Pixel Invaders")]
 async fn main() {
@@ -19,7 +21,7 @@ async fn main() {
     let mut last_player_shot_time: f32 = 0.0;
 
     // Vectors to hold enemies
-    let mut enemies: Vec<Enemy> = Vec::new();
+    let mut enemies: Rc<RefCell<Vec<Enemy>>> = Rc::new(RefCell::new(Vec::new()));
     let mut last_enemy_spawn_time: f32 = 0.0;
     let mob_cap = 4;
     let enemy_spawn_interval = 2.0;
@@ -57,8 +59,8 @@ async fn main() {
         }
 
         // Enemy spawning
-        if last_enemy_spawn_time >= enemy_spawn_interval && enemies.len() < mob_cap {
-            enemies.push(Enemy::new(
+        if last_enemy_spawn_time >= enemy_spawn_interval && enemies.borrow().len() < mob_cap {
+            enemies.borrow_mut().push(Enemy::new(
                 rand::gen_range(0.0, screen_width() - 40.0),
                 50.0,
             ));
@@ -66,7 +68,8 @@ async fn main() {
         }
 
         // Update and draw enemies
-        for enemy in &mut enemies {
+
+        for enemy in &mut *enemies.borrow_mut() {
             enemy.x += enemy.speed * enemy.direction as f32;
 
             // Keep the enemy within screen bounds
@@ -101,9 +104,6 @@ async fn main() {
                     player.health -= enemy.attack_power;
                     proj.y = proj.height + 1000.0;
                     println!("Hit and player healt {}", player.health);
-                    if player.health <= 0 {
-                        panic!();
-                    }
                     player.state = match player.state {
                         PlayerState::Healthy => PlayerState::Damaged,
                         PlayerState::Damaged => PlayerState::Injured,
@@ -135,26 +135,24 @@ async fn main() {
         // per-enemy projectile vectors are handled inside the enemy loop
 
         // Update score and remove defeated enemies
-        for enemy in &enemies {
+        for enemy in enemies.borrow_mut().iter_mut() {
             if enemy.health <= 0 {
                 player.score += 1;
             }
         }
-        enemies.retain(|enemy| enemy.health > 0);
+        enemies.borrow_mut().retain(|enemy| enemy.health > 0);
 
         // Draw player and score
         let text_size = measure_text(&format!("Score: {}", player.score), None, 50, 1.0);
-        draw_rectangle(
-            player.x,
-            player.y,
-            player.width,
-            player.height,
-            match player.state {
-                PlayerState::Healthy => GREEN,
-                PlayerState::Damaged => YELLOW,
-                PlayerState::Injured => RED,
-            },
-        );
+        player.draw();
+
+        //test
+        if player.health < 0 {
+         enemies = Rc::new(RefCell::new(Vec::new()));
+         player.health = 10;
+         player.score = 0;
+         player.state = PlayerState::Healthy;
+        }
 
         draw_text(
             &format!("Score: {}", player.score),

@@ -28,33 +28,40 @@ pub struct PlayerProjectile {
 }
 
 impl Player {
-
     pub fn new(x: f32, y: f32) -> Self {
         Self {
             x,
             y,
             speed: 15.0,
-            width: 120.0,
+            width: 60.0,
             height: 60.0,
             attack_power: 2,
-            attack_speed: 1.0,
+            attack_speed: 0.3,
             score: 0,
             state: PlayerState::Healthy,
             health: 10,
         }
     }
 
-
     pub fn move_left(&mut self) {
+          if self.health <= 0 {
+            return;
+        }
         self.x -= self.speed;
     }
 
     pub fn move_right(&mut self) {
+        if self.health <= 0 {
+            return;
+        }
         self.x += self.speed;
     }
 
     pub fn keep_player_screen_bounds(&mut self) {
         // Keep the player within screen bounds
+          if self.health <= 0 {
+            return;
+        }
         if self.x < 0.0 {
             self.x = 0.0;
         }
@@ -63,12 +70,19 @@ impl Player {
         }
     }
 
-    pub fn shoot(&mut self, projectile_vector: &mut Vec<PlayerProjectile>, last_player_shot_time : f32) -> bool {
+    pub fn shoot(
+        &mut self,
+        projectile_vector: &mut Vec<PlayerProjectile>,
+        last_player_shot_time: f32,
+    ) -> bool {
+        if self.health <= 0 {
+            return false;
+        }
         if last_player_shot_time >= self.attack_speed {
             projectile_vector.push(PlayerProjectile {
                 x: self.x + self.width / 2.0 - 5.0,
                 y: self.y,
-                speed: 400.0,
+                speed: 700.0,
                 width: 10.0,
                 height: 10.0,
             });
@@ -77,4 +91,21 @@ impl Player {
         return false;
     }
 
+    pub fn draw(&self) {
+        if self.health <= 0 {
+            return;
+        }
+            draw_rectangle(
+                self.x,
+                self.y,
+                self.width,
+                self.height,
+                match self.state {
+                    PlayerState::Healthy => GREEN,
+                    PlayerState::Damaged => YELLOW,
+                    PlayerState::Injured => RED,
+                },
+            );
+        
+    }
 }
